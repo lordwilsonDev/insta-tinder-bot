@@ -24,20 +24,56 @@ const VideoUploader = ({ userId }: VideoUploaderProps) => {
     setUploading(true);
 
     try {
-      // In a real app, you'd upload the file to storage
-      // For now, we'll just create a database entry
-      const { error } = await supabase.from("videos").insert({
-        user_id: userId,
-        title,
-        original_url: "placeholder_url", // Would be actual storage URL
-        status: "processing",
-      });
+      // Upload file to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('videos')
+        .upload(fileName, file);
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      // Create database entry with actual URL
+      const { data: videoData, error: dbError } = await supabase
+        .from("videos")
+        .insert({
+          user_id: userId,
+          title,
+          original_url: publicUrl,
+          status: "completed",
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // Create format entries for different platforms
+      const formats = [
+        { platform: 'instagram', aspect_ratio: '9:16', format_url: publicUrl },
+        { platform: 'youtube', aspect_ratio: '16:9', format_url: publicUrl },
+        { platform: 'facebook', aspect_ratio: '1:1', format_url: publicUrl },
+      ];
+
+      const { error: formatsError } = await supabase
+        .from("video_formats")
+        .insert(
+          formats.map(f => ({
+            video_id: videoData.id,
+            ...f,
+          }))
+        );
+
+      if (formatsError) throw formatsError;
 
       toast({
         title: "Video uploaded!",
-        description: "Your video is being processed for different platforms.",
+        description: "Your video has been formatted for different platforms.",
       });
 
       setTitle("");
