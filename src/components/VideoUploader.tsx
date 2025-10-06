@@ -78,6 +78,10 @@ const VideoUploader = ({ userId }: VideoUploaderProps) => {
 
       setTitle("");
       setFile(null);
+      
+      // Reset file input
+      const fileInput = document.getElementById("video") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
     } catch (error: any) {
       toast({
         variant: "destructive",
