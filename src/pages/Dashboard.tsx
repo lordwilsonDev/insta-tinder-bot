@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, Upload, Bot, Activity } from "lucide-react";
 import VideoUploader from "@/components/VideoUploader";
+import VideoList from "@/components/VideoList";
 import ChatbotConfig from "@/components/ChatbotConfig";
 import ActivityFeed from "@/components/ActivityFeed";
 
@@ -94,7 +95,15 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-6">
-          {activeTab === "videos" && <VideoUploader userId={user.id} />}
+          {activeTab === "videos" && (
+            <>
+              <VideoUploader userId={user.id} />
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-4">Your Videos</h2>
+                <VideoList userId={user.id} />
+              </div>
+            </>
+          )}
           {activeTab === "chatbot" && <ChatbotConfig userId={user.id} />}
           {activeTab === "activity" && <ActivityFeed userId={user.id} />}
         </div>
