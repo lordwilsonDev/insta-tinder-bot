@@ -9,6 +9,7 @@ import { Sparkles } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -21,7 +22,19 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isResetPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Reset link sent!",
+          description: "Check your email for the password reset link.",
+        });
+        setIsResetPassword(false);
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -76,17 +89,19 @@ const Auth = () => {
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent-blue bg-clip-text text-transparent">
-              {isLogin ? "Welcome Back" : "Get Started"}
+              {isResetPassword ? "Reset Password" : isLogin ? "Welcome Back" : "Get Started"}
             </h1>
             <p className="text-muted-foreground mt-2">
-              {isLogin
+              {isResetPassword
+                ? "Enter your email to receive a reset link"
+                : isLogin
                 ? "Log in to manage your automation"
                 : "Create your account to start automating"}
             </p>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+            {!isLogin && !isResetPassword && (
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
@@ -112,8 +127,9 @@ const Auth = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            {!isResetPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -122,24 +138,45 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-            </div>
+              </div>
+            )}
 
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-primary to-accent-blue hover:opacity-90 transition-opacity"
               disabled={loading}
             >
-              {loading ? "Loading..." : isLogin ? "Log In" : "Sign Up"}
+              {loading ? "Loading..." : isResetPassword ? "Send Reset Link" : isLogin ? "Log In" : "Sign Up"}
             </Button>
           </form>
+
+          {isLogin && !isResetPassword && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setIsResetPassword(true)}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                if (isResetPassword) {
+                  setIsResetPassword(false);
+                } else {
+                  setIsLogin(!isLogin);
+                }
+              }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin
+              {isResetPassword
+                ? "Back to login"
+                : isLogin
                 ? "Don't have an account? Sign up"
                 : "Already have an account? Log in"}
             </button>
